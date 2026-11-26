@@ -1,0 +1,19 @@
+KIỂM TRA FIRMWARE - 26/11/2026
+xeray-main
+arm-none-eabi-gcc.exe (GNU Tools for STM32 14.3.rel1.20251027-0700) 14.3.1 20250623
+Build bằng STM32CubeIDE 2.2.0: Debug/Release, 0 lỗi, 0 cảnh báo.
+Native GCC tests với HAL mô phỏng: PASS.
+Cấu hình .ioc và các vùng USER CODE: PASS.
+Chưa nạp, đo điện hoặc kiểm tra trên phần cứng thật.
+
+Debug:
+text	   data	    bss	    dec	    hex	filename
+  17976	     12	   3452	  21440	   53c0	D:\Code\some-project\xeray-main\Debug\xeray-main.elf
+HEX SHA256: bacf3f8c9554450a44cf39715392b48be1ca404ddaaa54af650454ed24593c26
+HEX checksum, giới hạn flash, stack/reset vector: PASS.
+
+Release:
+text	   data	    bss	    dec	    hex	filename
+  10196	     12	   3452	  13660	   355c	D:\Code\some-project\xeray-main\Release\xeray-main.elf
+HEX SHA256: eab5756ed42272b891c67595a2d23a25d7a84b387cb232e0669aafcf48efbc54
+HEX checksum, giới hạn flash, stack/reset vector: PASS.

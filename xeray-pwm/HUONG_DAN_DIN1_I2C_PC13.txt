@@ -1,0 +1,108 @@
+HƯỚNG DẪN D-IN1 MAIN -> I2C -> LED PC13 PWM
+
+1. HÀNH VI
+- D-IN1 có tín hiệu: PE0 main xuống thấp, LED PC13 PWM sáng.
+- D-IN1 mất tín hiệu: PE0 lên cao, LED tắt.
+- Lọc trạng thái ổn định 20 ms; bỏ các xung ngắn hơn thời gian lọc.
+- Main gửi khi trạng thái thay đổi và nhắc lại mỗi 100 ms.
+- PWM khởi động với LED tắt; tự tắt sau 500 ms không có trạng thái hợp lệ.
+- Hai bo tự đồng bộ lại khi nối lại I2C hoặc khởi động lại một trong hai bo.
+
+2. NỐI HAI BO
+Dùng JP1 HOẶC JP2 trên main, nối tới J1 trên PWM:
+  Main JP1/JP2 chân 1 (SDA2, PA8) -> PWM J1 chân 1 (SDA2, PB7)
+  Main JP1/JP2 chân 2 (P-GND)     -> PWM J1 chân 2 (A-GND)
+  Main JP1/JP2 chân 3 (SCL2, PA9) -> PWM J1 chân 3 (SCL2, PB6)
+Xác định chân 1 theo PCB; không suy vị trí chân từ hướng nhìn đầu nối.
+J1 PWM chân 4/5/6 không dùng. Chỉ cần ba dây trên, dùng dây ngắn.
+Mỗi bo được cấp nguồn theo mạch nguồn của chính bo đó.
+Các đường I2C dùng mức 3,3 V và điện trở kéo lên đã có trên main.
+Không nối tín hiệu 24 V vào SDA/SCL hoặc trực tiếp chân MCU.
+Cổng HD4 trên main không được dùng cho chức năng này.
+
+D-IN1 nằm tại HD8 trên main:
+  HD8 chân 1 = D-GND, mass của tín hiệu đầu vào.
+  HD8 chân 2 = IN_1, tín hiệu vào qua opto PC817.
+Với nguồn tín hiệu 24 V: cực dương vào HD8.2, cực âm vào HD8.1.
+D-GND của tín hiệu đầu vào và P-GND của bus I2C là các nhãn khác nhau;
+không lấy chân HD8.1 thay cho chân GND của đầu nối I2C.
+Trước khi thử toàn tuyến, đo PE0: không có tín hiệu xấp xỉ 3,3 V,
+có tín hiệu phải xuống mức logic thấp. Kiểm tra nguồn +3V3_IN của pull-up.
+
+3. GIAO THỨC VÀ CẤU HÌNH
+Main STM32F407: I2C master bằng phần mềm, SDA=PA8, SCL=PA9, open-drain.
+I2C3 đã bỏ vì PA8/PA9 của PCB không phải cặp I2C3 phần cứng.
+PWM STM32F103C8: I2C1 slave bằng ngắt, SCL=PB6, SDA=PB7.
+Địa chỉ 7 bit: 0x30. Byte địa chỉ ghi trên bus: 0x60.
+Giá trị HAL OwnAddress1: 0x30 << 1 = 0x60 = 96.
+Giao dịch: START, 0x60, ACK, một byte 0x00 hoặc 0x01, ACK, STOP.
+  0x00 = tắt LED; 0x01 = bật LED.
+Byte khác không đổi trạng thái LED và không gia hạn thời hạn 500 ms.
+Yêu cầu đọc không gia hạn thời hạn; slave trả byte dự phòng 0xFF.
+Chỉ dùng một master trên bus. Không dùng thêm giao thức nhiều byte.
+Xung SCL không quá 100 kHz, có chờ clock stretching.
+Mỗi lần gửi giới hạn khoảng 25 ms; khi lỗi, thử lại sau 100 ms.
+Nếu SDA bị giữ thấp, main thử tối đa chín xung rồi STOP để phục hồi bus.
+PWM cũng khởi tạo lại I2C nếu một giao dịch dở dang kéo dài 25 ms.
+
+4. BUILD VÀ NẠP
+Mở hai project xeray-main và xeray-pwm trong STM32CubeIDE.
+Build project, chọn đúng MCU:
+  xeray-main = STM32F407VGTx, thạch anh ngoài 25 MHz.
+  xeray-pwm = STM32F103C8Tx, thạch anh ngoài 8 MHz.
+Các clock và ngoại vi khác được giữ từ cấu hình gốc.
+
+Các file hiện có sau khi build:
+  xeray-main/Debug/xeray-main.elf và xeray-main/Debug/xeray-main.hex
+  xeray-main/Release/xeray-main.elf và xeray-main/Release/xeray-main.hex
+  xeray-pwm/Debug/xeray-pwm.elf và xeray-pwm/Debug/xeray-pwm.hex
+  xeray-pwm/Release/xeray-pwm.elf và xeray-pwm/Release/xeray-pwm.hex
+
+Nạp bằng ST-LINK qua SWD trong CubeIDE hoặc STM32CubeProgrammer:
+- Kết nối SWDIO, SWCLK, GND và tham chiếu nguồn đúng nhãn trên bo.
+- Nạp file xeray-main cho bo main; nạp file xeray-pwm cho bo PWM.
+- File ELF/HEX chứa địa chỉ flash; nạp từ 0x08000000.
+- Sau khi nạp, chạy MCU/Run after programming hoặc reset bo.
+Có thể nạp theo thứ tự bất kỳ.
+Nếu sửa mã và build lại, ELF được cập nhật trực tiếp. Các HEX đi kèm là
+bản xuất tại thời điểm kiểm tra; cần xuất HEX lại sau mỗi lần sửa/build.
+Có thể nạp ELF mới nhất trực tiếp bằng STM32CubeProgrammer.
+
+5. THỬ TRÊN BO THẬT
+A. Không cấp tín hiệu D-IN1: LED PWM phải tắt.
+B. Cấp tín hiệu D-IN1: LED phải sáng sau thời gian lọc, mục tiêu dưới 50 ms
+   trong điều kiện bus bình thường.
+C. Ngắt tín hiệu D-IN1: LED phải tắt trong điều kiện bus bình thường.
+D. Bật/tắt nhiều lần; xung ngắn dưới 20 ms không được bật LED.
+E. Khi LED sáng, tháo SDA/SCL: LED phải tắt sau 500 ms kể từ trạng thái
+   hợp lệ cuối cùng. Nối lại: LED tự khớp với D-IN1 hiện tại.
+F. Reset từng bo khi D-IN1 đang có tín hiệu; thử cấp nguồn hai bo theo
+   cả hai thứ tự. PWM luôn bắt đầu ở trạng thái tắt rồi nhận lại trạng thái.
+G. Nếu có logic analyzer: kiểm tra địa chỉ 0x30 Write, ACK và dữ liệu
+   0x00/0x01, nhịp gửi 100 ms, mức điện áp và thời gian SCL thực tế.
+
+Nếu PE0 thay đổi đúng nhưng không thấy ACK, kiểm tra số chân đầu nối,
+PA8=SDA / PA9=SCL, nguồn 3,3 V hai bo và dây GND bus.
+Nếu PC13 đã lên cao nhưng LED không sáng, kiểm tra L1/R7 và phần cứng LED.
+
+6. GIỚI HẠN NHÁNH LED HIỆN TẠI
+Firmware giữ mạch PC13 -> R7 330 ohm -> L1 -> GND:
+  PC13 cao = sáng; PC13 thấp = tắt.
+Datasheet ST không cho dùng PC13 làm nguồn cấp dòng LED. Bản này phục vụ
+thử với PCB hiện có; firmware không khắc phục hạn chế điện của nhánh LED.
+Nguồn: https://www.st.com/resource/en/datasheet/stm32f103c8.pdf
+
+7. KIỂM THỬ PHẦN MỀM
+Trong mỗi thư mục project, chạy: python tests/run_tests.py
+Yêu cầu GCC chạy trên máy tính (không phải arm-none-eabi-gcc).
+Có thể chọn compiler bằng: python tests/run_tests.py --cc <đường-dẫn-gcc>
+Các test biên dịch và chạy trực tiếp module C thật với HAL mô phỏng,
+bao gồm lọc đầu vào, heartbeat, NACK, timeout/phục hồi bus, STOP, dữ liệu
+không hợp lệ, khởi tạo lại I2C và tràn bộ đếm HAL_GetTick.
+Build và test mô phỏng không thay thế đo/nạp thử trên bo thật.
+
+8. CẤU TRÚC MÃ
+Main: Core/Src/din1_link.c; PWM: Core/Src/led_link.c.
+main.c gọi Init/Poll trong vùng USER CODE; logic riêng nằm trong module.
+Các file .ioc đã đồng bộ chân GPIO, địa chỉ và ngắt I2C1.
+Khi sinh lại mã từ CubeMX, giữ các file module và vùng USER CODE.

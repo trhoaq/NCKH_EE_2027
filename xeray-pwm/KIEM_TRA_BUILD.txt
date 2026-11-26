@@ -1,0 +1,21 @@
+KIỂM TRA FIRMWARE - 26/11/2026
+xeray-pwm
+arm-none-eabi-gcc.exe (GNU Tools for STM32 14.3.rel1.20251027-0700) 14.3.1 20250623
+Build bằng STM32CubeIDE 2.2.0: Debug/Release, 0 lỗi, 0 cảnh báo.
+Native GCC tests với HAL mô phỏng: PASS.
+Cấu hình .ioc và các vùng USER CODE: PASS.
+Chưa nạp, đo điện hoặc kiểm tra trên phần cứng thật.
+
+Debug:
+text	   data	    bss	    dec	    hex	filename
+  18892	     16	   1840	  20748	   510c	D:\Code\some-project\xeray-pwm\Debug\xeray-pwm.elf
+HEX SHA256: 6a0e276d50a0f61b6e20ded259c2a0ff2075a1132cb86d031aeea2e0ed09d51f
+HEX checksum, giới hạn flash, stack/reset vector: PASS.
+Callback và vector I2C1 event/error trỏ tới hàm thật: PASS.
+
+Release:
+text	   data	    bss	    dec	    hex	filename
+  10500	     16	   1840	  12356	   3044	D:\Code\some-project\xeray-pwm\Release\xeray-pwm.elf
+HEX SHA256: 32b5fd077c0ff0d37899e7dea7b7323acc109eefcd91734c6dc1795d5758f400
+HEX checksum, giới hạn flash, stack/reset vector: PASS.
+Callback và vector I2C1 event/error trỏ tới hàm thật: PASS.
